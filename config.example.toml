@@ -1,7 +1,8 @@
 # The base server configuration
 [server]
-# Where the server should listen to receive webhooks
-address = "127.0.0.1:8000"
+# The port and address where server should listen to receive webhooks
+address = "127.0.0.1"
+port = 8000
 
 # A secret key to secure the webhook
 secret = "some-secure-string"
