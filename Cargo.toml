@@ -13,3 +13,9 @@ toml = "0.5.8"
 
 # Error handling
 anyhow = "1.0"
+
+# Webserver
+tokio = { version = "1.5", features = ["macros", "rt", "rt-multi-thread"] }
+tracing = "0.1.25"
+tracing-subscriber = "0.2.17"
+warp = { version = "0.3.1", default-features = false }

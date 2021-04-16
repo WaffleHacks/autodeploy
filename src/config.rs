@@ -1,6 +1,6 @@
 use anyhow::Result;
 use serde::Deserialize;
-use std::{fs, net::IpAddr, path::Path};
+use std::{fs, net::SocketAddr, path::Path};
 
 /// Parse the configuration from a given file
 pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config> {
@@ -10,15 +10,14 @@ pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config> {
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    server: Server,
-    events: Vec<Event>,
+    pub server: Server,
+    pub events: Vec<Event>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Server {
-    address: IpAddr,
-    port: u16,
-    secret: String,
+    pub address: SocketAddr,
+    pub secret: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -39,7 +38,7 @@ pub enum Mode {
 #[derive(Debug, Deserialize)]
 pub struct Event {
     #[serde(flatten)]
-    action: Action,
+    pub action: Action,
     #[serde(flatten)]
-    mode: Mode,
+    pub mode: Mode,
 }
