@@ -17,6 +17,7 @@ pub struct Config {
 #[derive(Debug, Deserialize)]
 pub struct Server {
     pub address: SocketAddr,
+    pub log: String,
     pub secret: String,
 }
 
