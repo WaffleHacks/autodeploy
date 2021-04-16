@@ -1,0 +1,36 @@
+# The base server configuration
+[server]
+# Where the server should listen to receive webhooks
+address = "127.0.0.1:8000"
+
+# A secret key to secure the webhook
+secret = "some-secure-string"
+
+
+# Events that should be listened to
+# Below is an example of a push deploy
+[[events]]
+# The type of event that should be responded to
+# Default: "push"
+# Options: "push", "release"
+action = "push"
+
+# The branch to automatically deploy
+# Default: "master"
+branch = "master"
+
+# How the repositories should be filtered
+# Options: "all", "blacklist", "whitelist"
+mode = "all"
+
+# The repositories that are contained in the blacklist/whitelist
+# Ignored when mode is set to "all"
+# Must be in the format <user>/<repo>
+repositories = ["user/repo", "octocat/hello-world"]
+
+# Below is an example of a release deploy
+# Note that branch is ignored
+[[events]]
+action = "release"
+mode = "all"
+repositories = ["user/repo", "octocat/hello-world"]
