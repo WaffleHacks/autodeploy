@@ -1,5 +1,12 @@
+use anyhow::Result;
 use serde::Deserialize;
-use std::net::IpAddr;
+use std::{fs, net::IpAddr, path::Path};
+
+/// Parse the configuration from a given file
+pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config> {
+    let raw = fs::read(path)?;
+    Ok(toml::from_slice(&raw)?)
+}
 
 #[derive(Debug, Deserialize)]
 pub struct Config {

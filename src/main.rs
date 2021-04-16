@@ -1,11 +1,11 @@
-use std::fs;
+use anyhow::{Context, Result};
 
 mod config;
 
-use config::Config;
+fn main() -> Result<()> {
+    // Get the configuration
+    let configuration = config::parse("./config.toml").context("Failed to load configuration")?;
+    println!("{:#?}", configuration);
 
-fn main() {
-    let content = fs::read("./config.toml").expect("Failed to read file");
-    let cfg: Config = toml::from_slice(&content).expect("Failed to parse config");
-    println!("{:#?}", cfg);
+    Ok(())
 }
