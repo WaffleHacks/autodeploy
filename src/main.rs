@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
-use std::{env, fs};
+use std::env;
+use tokio::fs;
 use tracing_subscriber::fmt::format::FmtSpan;
 use warp::Filter;
 
@@ -10,13 +11,16 @@ mod http;
 #[tokio::main]
 async fn main() -> Result<()> {
     // Get the configuration
-    let configuration = config::parse("./config.toml").context("Failed to load configuration")?;
+    let configuration = config::parse("./config.toml")
+        .await
+        .context("Failed to load configuration")?;
     let address = configuration.server.address.clone();
     let log_filter = env::var("RUST_LOG").unwrap_or(configuration.server.log.clone());
 
     // Ensure the directory for the repositories exists
     if !configuration.server.repositories.exists() {
         fs::create_dir_all(&configuration.server.repositories)
+            .await
             .context("Failed to create repository directory")?;
     }
 

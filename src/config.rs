@@ -1,14 +1,14 @@
 use anyhow::Result;
 use serde::Deserialize;
 use std::{
-    fs,
     net::SocketAddr,
     path::{Path, PathBuf},
 };
+use tokio::fs;
 
 /// Parse the configuration from a given file
-pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config> {
-    let raw = fs::read(path)?;
+pub async fn parse<P: AsRef<Path>>(path: P) -> Result<Config> {
+    let raw = fs::read(path).await?;
     Ok(toml::from_slice(&raw)?)
 }
 
