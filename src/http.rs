@@ -1,6 +1,7 @@
 use crate::github::Github;
 use serde::Serialize;
 use std::convert::Infallible;
+use tracing::info;
 use warp::{
     filters::body::BodyDeserializeError, http::StatusCode, reject::MethodNotAllowed, reply, Filter,
     Rejection, Reply,
@@ -18,14 +19,19 @@ pub fn routes() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone 
     // Health check route
     let health = warp::path("health")
         .and(warp::get())
-        .map(|| StatusCode::NO_CONTENT);
+        .map(|| {
+            info!("alive and healthy!");
+            StatusCode::NO_CONTENT
+        })
+        .with(warp::trace::named("health"));
 
     // Main hook route
     let hook = warp::path::end()
         .and(warp::post())
         .and(warp::body::content_length_limit(1024 * 64))
         .and(warp::body::json())
-        .and_then(handle);
+        .and_then(handle)
+        .with(warp::trace::named("hook"));
 
     health.or(hook)
 }
