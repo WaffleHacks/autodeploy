@@ -4,6 +4,7 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use warp::Filter;
 
 mod config;
+mod github;
 mod http;
 
 #[tokio::main]

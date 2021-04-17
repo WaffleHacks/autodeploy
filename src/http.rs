@@ -1,3 +1,4 @@
+use crate::github::Github;
 use serde::Serialize;
 use std::convert::Infallible;
 use warp::{
@@ -22,7 +23,7 @@ pub fn routes() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone 
     // Main hook route
     let hook = warp::path::end()
         .and(warp::post())
-        .and(warp::body::content_length_limit(1024 * 16))
+        .and(warp::body::content_length_limit(1024 * 64))
         .and(warp::body::json())
         .and_then(handle);
 
@@ -31,7 +32,8 @@ pub fn routes() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone 
 
 /// Handle receiving webhooks from GitHub
 // TODO: add body parsing
-async fn handle(body: String) -> Result<impl Reply, Rejection> {
+async fn handle(body: Github) -> Result<impl Reply, Rejection> {
+    println!("{:#?}", body);
     Ok(reply::json(&"hello".to_string()))
 }
 
