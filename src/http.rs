@@ -37,10 +37,17 @@ pub fn routes() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone 
 }
 
 /// Handle receiving webhooks from GitHub
-// TODO: add body parsing
 async fn handle(body: Github) -> Result<impl Reply, Rejection> {
-    println!("{:#?}", body);
-    Ok(reply::json(&"hello".to_string()))
+    info!("got new {} hook", body.name());
+
+    // Operate based on the body type
+    match body {
+        Github::Ping { zen, hook_id } => info!("received ping from hook {}: {}", hook_id, zen),
+        Github::Push { .. } => {}
+        Github::Release { .. } => {}
+    }
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 /// Convert a `Rejection` to an API error, otherwise simply passes

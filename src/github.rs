@@ -20,6 +20,17 @@ pub enum Github {
     },
 }
 
+impl Github {
+    /// Get the name of the webhook being used
+    pub fn name<'a>(&self) -> &'a str {
+        match self {
+            Self::Ping { .. } => "ping",
+            Self::Push { .. } => "push",
+            Self::Release { .. } => "release",
+        }
+    }
+}
+
 /// Possible release actions that can be done
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
