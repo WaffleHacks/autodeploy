@@ -11,7 +11,8 @@ mod http;
 async fn main() -> Result<()> {
     // Get the configuration
     let configuration = config::parse("./config.toml").context("Failed to load configuration")?;
-    let log_filter = env::var("RUST_LOG").unwrap_or(configuration.server.log);
+    let address = configuration.server.address.clone();
+    let log_filter = env::var("RUST_LOG").unwrap_or(configuration.server.log.clone());
 
     // Setup logging
     tracing_subscriber::fmt()
@@ -20,10 +21,10 @@ async fn main() -> Result<()> {
         .init();
 
     // Setup the routes and launch the server
-    let routes = http::routes()
+    let routes = http::routes(configuration)
         .recover(http::recover)
         .with(warp::trace::request());
-    warp::serve(routes).run(configuration.server.address).await;
+    warp::serve(routes).run(address).await;
 
     Ok(())
 }
