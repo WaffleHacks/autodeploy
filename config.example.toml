@@ -8,6 +8,10 @@ address = "127.0.0.1:8000"
 # Default: "info"
 log = "info"
 
+# Where the repositories are cloned
+# Default: "./repositories"
+repositories = "./repositories"
+
 # A secret key to secure the webhook
 secret = "some-secure-string"
 

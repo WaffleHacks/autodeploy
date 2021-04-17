@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use std::env;
+use std::{env, fs};
 use tracing_subscriber::fmt::format::FmtSpan;
 use warp::Filter;
 
@@ -13,6 +13,12 @@ async fn main() -> Result<()> {
     let configuration = config::parse("./config.toml").context("Failed to load configuration")?;
     let address = configuration.server.address.clone();
     let log_filter = env::var("RUST_LOG").unwrap_or(configuration.server.log.clone());
+
+    // Ensure the directory for the repositories exists
+    if !configuration.server.repositories.exists() {
+        fs::create_dir_all(&configuration.server.repositories)
+            .context("Failed to create repository directory")?;
+    }
 
     // Setup logging
     tracing_subscriber::fmt()

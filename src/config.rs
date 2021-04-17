@@ -1,6 +1,10 @@
 use anyhow::Result;
 use serde::Deserialize;
-use std::{fs, net::SocketAddr, path::Path};
+use std::{
+    fs,
+    net::SocketAddr,
+    path::{Path, PathBuf},
+};
 
 /// Parse the configuration from a given file
 pub fn parse<P: AsRef<Path>>(path: P) -> Result<Config> {
@@ -18,6 +22,7 @@ pub struct Config {
 pub struct Server {
     pub address: SocketAddr,
     pub log: String,
+    pub repositories: PathBuf,
     pub secret: String,
 }
 
