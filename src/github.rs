@@ -47,13 +47,13 @@ pub enum ReleaseAction {
 /// Information about a release
 #[derive(Debug, Deserialize)]
 pub struct Release {
-    tag_name: String,
+    pub tag_name: String,
 }
 
 /// The repository information
 #[derive(Debug, Deserialize)]
 pub struct Repository {
     #[serde(rename = "full_name")]
-    name: String,
-    clone_url: String,
+    pub name: String,
+    pub clone_url: String,
 }
