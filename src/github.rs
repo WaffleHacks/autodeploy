@@ -32,7 +32,7 @@ impl Github {
 }
 
 /// Possible release actions that can be done
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum ReleaseAction {
     Published,

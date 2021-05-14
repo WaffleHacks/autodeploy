@@ -2,7 +2,7 @@ use super::{
     errors::{BodyParsingError, SignatureError},
     SharedConfig,
 };
-use crate::github::Github;
+use crate::github::{Github, ReleaseAction};
 use bytes::Bytes;
 use ring::hmac;
 use tracing::info;
@@ -43,8 +43,15 @@ pub async fn hook(
     // Operate based on the body type
     match body {
         Github::Ping { zen, hook_id } => info!("received ping from hook {}: {}", hook_id, zen),
-        Github::Push { .. } => {}
-        Github::Release { .. } => {}
+        Github::Push {
+            reference,
+            repository,
+        } => {}
+        Github::Release {
+            action,
+            repository,
+            release,
+        } => {}
     }
 
     Ok(StatusCode::NO_CONTENT)
