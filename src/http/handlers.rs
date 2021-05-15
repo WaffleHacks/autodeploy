@@ -1,5 +1,6 @@
 use super::{
-    errors::{BodyParsingError, GitError, SignatureError},
+    access,
+    errors::{BodyParsingError, GitError},
     SharedConfig,
 };
 use crate::{
@@ -8,35 +9,8 @@ use crate::{
 };
 use bytes::Bytes;
 use git2::Repository;
-use ring::hmac;
-use tracing::{debug, info};
+use tracing::info;
 use warp::{http::StatusCode, reject, Rejection, Reply};
-
-/// Ensure that the signature from github is valid
-fn validate_signature(
-    raw_body: &[u8],
-    raw_signature: String,
-    secret: &[u8],
-) -> Result<(), Rejection> {
-    // Remove the sha256 prefix from the hash
-    let signature_hex = raw_signature
-        .strip_prefix("sha256=")
-        .ok_or_else(|| reject::custom(SignatureError))?;
-    let signature = hex::decode(signature_hex).map_err(|_| reject::custom(SignatureError))?;
-
-    let key = hmac::Key::new(hmac::HMAC_SHA256, secret);
-
-    // Display the expected signature in debug builds
-    #[cfg(debug_assertions)]
-    debug!(
-        "signature validation: expected: {}, got: {}",
-        hex::encode(hmac::sign(&key, raw_body).as_ref()),
-        signature_hex
-    );
-
-    // Check if the signature is valid
-    hmac::verify(&key, raw_body, &signature).map_err(|_| reject::custom(SignatureError))
-}
 
 /// Handle receiving webhooks from GitHub
 pub async fn hook(
@@ -45,12 +19,15 @@ pub async fn hook(
     config: SharedConfig,
 ) -> Result<impl Reply, Rejection> {
     // Ensure the signature is valid
-    validate_signature(&raw_body, raw_signature, config.server.secret.as_bytes())?;
+    access::valid_signature(&raw_body, raw_signature, config.server.secret.as_bytes())?;
 
     // Attempt to parse the body
     let body: Github =
         serde_json::from_slice(&raw_body).map_err(|_| reject::custom(BodyParsingError))?;
     info!("got new {} hook", body.name());
+
+    // Ensure the repository is allowed to be deployed
+    access::deployable(&config, &body)?;
 
     // Extract the repository information and reference
     let (repository, fetch_refspec, merge_refspec) = match body {

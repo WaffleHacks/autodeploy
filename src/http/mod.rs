@@ -3,6 +3,7 @@ use std::{convert::Infallible, sync::Arc};
 use tracing::info;
 use warp::{http::StatusCode, Filter, Rejection, Reply};
 
+mod access;
 mod errors;
 mod handlers;
 

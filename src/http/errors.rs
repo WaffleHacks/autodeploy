@@ -25,6 +25,11 @@ impl Reject for SignatureError {}
 pub struct BodyParsingError;
 impl Reject for BodyParsingError {}
 
+/// Raised when the repo is not allowed to be deployed
+#[derive(Debug)]
+pub struct UndeployableError;
+impl Reject for UndeployableError {}
+
 /// Raised when there is an error interacting with the git repository
 #[derive(Debug)]
 pub struct GitError(pub Git2Error);
@@ -47,6 +52,9 @@ pub async fn recover(error: Rejection) -> Result<impl Reply, Infallible> {
         code = StatusCode::METHOD_NOT_ALLOWED;
         message = "method not allowed";
     } else if error.find::<SignatureError>().is_some() {
+        code = StatusCode::UNAUTHORIZED;
+        message = "unauthorized";
+    } else if error.find::<UndeployableError>().is_some() {
         code = StatusCode::FORBIDDEN;
         message = "forbidden";
     } else if let Some(e) = error.find::<GitError>() {

@@ -33,6 +33,16 @@ pub enum Action {
     Release,
 }
 
+impl Action {
+    /// Checks that the branch is allowed on a push
+    pub fn matches(&self, branch: Option<&str>) -> bool {
+        match self {
+            Self::Push { branch: b } => b == branch.unwrap_or_default(),
+            Self::Release => true,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(tag = "mode", rename_all = "lowercase")]
 pub enum Mode {
@@ -41,10 +51,30 @@ pub enum Mode {
     Whitelist { repositories: Vec<String> },
 }
 
+impl Mode {
+    /// Checks that the repository name is allowed to be deployed
+    #[allow(clippy::ptr_arg)]
+    pub fn matches(&self, repository: &String) -> bool {
+        match self {
+            Self::All => true,
+            Self::Blacklist { repositories } => !repositories.contains(repository),
+            Self::Whitelist { repositories } => repositories.contains(repository),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct Event {
     #[serde(flatten)]
     pub action: Action,
     #[serde(flatten)]
     pub mode: Mode,
+}
+
+impl Event {
+    /// Checks that the repository configuration is allowed
+    #[allow(clippy::ptr_arg)]
+    pub fn matches(&self, repository: &String, branch: Option<&str>) -> bool {
+        self.mode.matches(repository) && self.action.matches(branch)
+    }
 }
