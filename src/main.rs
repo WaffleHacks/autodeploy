@@ -12,14 +12,14 @@ mod repo;
 #[tokio::main]
 async fn main() -> Result<()> {
     // Determine what config file to load
-    let file = env::var("AUTODEPLOY_CONFIG").unwrap_or("./config.toml".to_string());
+    let file = env::var("AUTODEPLOY_CONFIG").unwrap_or_else(|_| "./config.toml".to_string());
 
     // Get the configuration
     let configuration = config::parse(file)
         .await
         .context("Failed to load configuration")?;
-    let address = configuration.server.address.clone();
-    let log_filter = env::var("RUST_LOG").unwrap_or(configuration.server.log.clone());
+    let address = configuration.server.address;
+    let log_filter = env::var("RUST_LOG").unwrap_or_else(|_| configuration.server.log.clone());
 
     // Ensure the directory for the repositories exists
     if !configuration.server.repositories.exists() {

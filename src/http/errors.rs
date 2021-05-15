@@ -39,16 +39,14 @@ pub async fn recover(error: Rejection) -> Result<impl Reply, Infallible> {
     if error.is_not_found() {
         code = StatusCode::NOT_FOUND;
         message = "not found";
-    } else if let Some(_) = error.find::<MissingHeader>() {
+    } else if error.find::<MissingHeader>().is_some() || error.find::<BodyParsingError>().is_some()
+    {
         code = StatusCode::BAD_REQUEST;
         message = "bad request";
-    } else if let Some(_) = error.find::<BodyParsingError>() {
-        code = StatusCode::BAD_REQUEST;
-        message = "bad request";
-    } else if let Some(_) = error.find::<MethodNotAllowed>() {
+    } else if error.find::<MethodNotAllowed>().is_some() {
         code = StatusCode::METHOD_NOT_ALLOWED;
         message = "method not allowed";
-    } else if let Some(_) = error.find::<SignatureError>() {
+    } else if error.find::<SignatureError>().is_some() {
         code = StatusCode::FORBIDDEN;
         message = "forbidden";
     } else if let Some(e) = error.find::<GitError>() {

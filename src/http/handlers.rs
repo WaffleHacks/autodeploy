@@ -21,7 +21,7 @@ fn validate_signature(
     // Remove the sha256 prefix from the hash
     let signature_hex = raw_signature
         .strip_prefix("sha256=")
-        .ok_or(reject::custom(SignatureError))?;
+        .ok_or_else(|| reject::custom(SignatureError))?;
     let signature = hex::decode(signature_hex).map_err(|_| reject::custom(SignatureError))?;
 
     let key = hmac::Key::new(hmac::HMAC_SHA256, secret);
@@ -30,13 +30,12 @@ fn validate_signature(
     #[cfg(debug_assertions)]
     debug!(
         "signature validation: expected: {}, got: {}",
-        hex::encode(hmac::sign(&key, raw_body.as_ref()).as_ref()),
+        hex::encode(hmac::sign(&key, raw_body).as_ref()),
         signature_hex
     );
 
     // Check if the signature is valid
-    Ok(hmac::verify(&key, raw_body.as_ref(), &signature)
-        .map_err(|_| reject::custom(SignatureError))?)
+    hmac::verify(&key, raw_body, &signature).map_err(|_| reject::custom(SignatureError))
 }
 
 /// Handle receiving webhooks from GitHub
