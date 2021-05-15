@@ -9,6 +9,7 @@ use crate::{
 };
 use bytes::Bytes;
 use git2::Repository;
+use std::path::Path;
 use tracing::info;
 use warp::{http::StatusCode, reject, Rejection, Reply};
 
@@ -59,32 +60,57 @@ pub async fn hook(
     let folder_name = repository.name.replace("/", "__");
     let path = config.server.repositories.join(folder_name);
 
+    // Update the repository in a separate thread
+    let arg_path = path.clone();
+    let arg_repo = repository.clone();
+    tokio::task::spawn_blocking(move || {
+        update_repo(
+            &arg_path,
+            &arg_repo.name,
+            &arg_repo.clone_url,
+            fetch_refspec,
+            merge_refspec,
+        )
+    })
+    .await
+    .unwrap()
+    .map_err(|e| reject::custom(GitError(e)))?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Update the local copy of the repository
+fn update_repo(
+    path: &Path,
+    name: &str,
+    clone_url: &str,
+    fetch_refspec: String,
+    merge_refspec: Option<String>,
+) -> Result<(), git2::Error> {
     // Initialize the repository
-    let repo = Repository::init(&path).unwrap();
+    let repo = Repository::init(path)?;
 
     // Get the repository's remote to pull
-    repo.remote_set_url("origin", &repository.clone_url)
-        .unwrap();
+    repo.remote_set_url("origin", clone_url)?;
     let mut remote = repo.find_remote("origin").unwrap();
 
     // Download the repository
     // TODO: support private repositories
-    info!("pulling {} for {}", fetch_refspec, repository.name);
-    let fetch_commit = repo::fetch(&repo, &[&fetch_refspec], &mut remote)
-        .map_err(|e| reject::custom(GitError(e)))?;
+    info!("pulling {} for {}", fetch_refspec, name);
+    let fetch_commit = repo::fetch(&repo, &[&fetch_refspec], &mut remote)?;
 
     // Merge the fetched data
     info!(
         "merging into {}",
         fetch_commit.refname().unwrap_or(&fetch_refspec)
     );
-    repo::merge(&repo, &fetch_refspec, fetch_commit).map_err(|e| reject::custom(GitError(e)))?;
+    repo::merge(&repo, &fetch_refspec, fetch_commit)?;
 
     // Checkout the last pushed commit (if it is a push)
     if let Some(commit) = merge_refspec {
         info!("checking out commit {}", commit);
-        repo::checkout(&repo, &commit).map_err(|e| reject::custom(GitError(e)))?;
+        repo::checkout(&repo, &commit)?;
     }
 
-    Ok(StatusCode::NO_CONTENT)
+    Ok(())
 }

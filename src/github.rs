@@ -52,7 +52,7 @@ pub struct Release {
 }
 
 /// The repository information
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Repository {
     #[serde(rename = "full_name")]
     pub name: String,
