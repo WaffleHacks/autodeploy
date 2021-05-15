@@ -1,11 +1,15 @@
 use super::{
-    errors::{BodyParsingError, SignatureError},
+    errors::{BodyParsingError, GitError, SignatureError},
     SharedConfig,
 };
-use crate::github::{Github, ReleaseAction};
+use crate::{
+    github::{Github, ReleaseAction},
+    repo,
+};
 use bytes::Bytes;
+use git2::Repository;
 use ring::hmac;
-use tracing::info;
+use tracing::{debug, info};
 use warp::{http::StatusCode, reject, Rejection, Reply};
 
 /// Ensure that the signature from github is valid
@@ -20,8 +24,17 @@ fn validate_signature(
         .ok_or(reject::custom(SignatureError))?;
     let signature = hex::decode(signature_hex).map_err(|_| reject::custom(SignatureError))?;
 
-    // Check if the signature is valid
     let key = hmac::Key::new(hmac::HMAC_SHA256, secret);
+
+    // Display the expected signature in debug builds
+    #[cfg(debug_assertions)]
+    debug!(
+        "signature validation: expected: {}, got: {}",
+        hex::encode(hmac::sign(&key, raw_body.as_ref()).as_ref()),
+        signature_hex
+    );
+
+    // Check if the signature is valid
     Ok(hmac::verify(&key, raw_body.as_ref(), &signature)
         .map_err(|_| reject::custom(SignatureError))?)
 }
@@ -51,7 +64,35 @@ pub async fn hook(
             action,
             repository,
             release,
-        } => {}
+        } => {
+            // Only do stuff when released
+            if action == ReleaseAction::Released {
+                // Build the repository path
+                let folder_name = repository.name.replace("/", "__");
+                let path = config.server.repositories.join(folder_name);
+
+                // Initialize the repository
+                let repo = Repository::init(&path).unwrap();
+
+                // Get the repository's remote to pull
+                repo.remote_set_url("origin", &repository.clone_url)
+                    .unwrap();
+                let mut remote = repo.find_remote("origin").unwrap();
+
+                // Download the repository
+                // TODO: support private repositories
+                info!(
+                    "pulling {} version {}...",
+                    repository.name, release.tag_name
+                );
+                repo::pull(
+                    &repo,
+                    &format!("refs/tags/{}", release.tag_name),
+                    &mut remote,
+                )
+                .map_err(|e| reject::custom(GitError(e)))?;
+            }
+        }
     }
 
     Ok(StatusCode::NO_CONTENT)

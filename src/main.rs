@@ -7,6 +7,7 @@ use warp::Filter;
 mod config;
 mod github;
 mod http;
+mod repo;
 
 #[tokio::main]
 async fn main() -> Result<()> {

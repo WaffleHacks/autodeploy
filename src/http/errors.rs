@@ -1,5 +1,7 @@
+use git2::Error as Git2Error;
 use serde::Serialize;
 use std::convert::Infallible;
+use tracing::error;
 use warp::{
     http::StatusCode,
     reject::{MethodNotAllowed, MissingHeader, Reject},
@@ -23,6 +25,11 @@ impl Reject for SignatureError {}
 pub struct BodyParsingError;
 impl Reject for BodyParsingError {}
 
+/// Raised when there is an error interacting with the git repository
+#[derive(Debug)]
+pub struct GitError(pub Git2Error);
+impl Reject for GitError {}
+
 /// Convert a `Rejection` to an API error, otherwise simply passes
 /// the rejection along.
 pub async fn recover(error: Rejection) -> Result<impl Reply, Infallible> {
@@ -44,6 +51,15 @@ pub async fn recover(error: Rejection) -> Result<impl Reply, Infallible> {
     } else if let Some(_) = error.find::<SignatureError>() {
         code = StatusCode::FORBIDDEN;
         message = "forbidden";
+    } else if let Some(e) = error.find::<GitError>() {
+        error!(
+            "error while interacting with local repo: ({:?}, {:?}) {}",
+            e.0.class(),
+            e.0.code(),
+            e.0.message()
+        );
+        code = StatusCode::INTERNAL_SERVER_ERROR;
+        message = "unhandled rejection"
     } else {
         code = StatusCode::INTERNAL_SERVER_ERROR;
         message = "unhandled rejection";
