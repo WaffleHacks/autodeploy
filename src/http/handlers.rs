@@ -53,13 +53,17 @@ pub async fn hook(
         serde_json::from_slice(&raw_body).map_err(|_| reject::custom(BodyParsingError))?;
     info!("got new {} hook", body.name());
 
-    // Operate based on the body type
-    match body {
-        Github::Ping { zen, hook_id } => info!("received ping from hook {}: {}", hook_id, zen),
+    // Extract the repository information and reference
+    let (repository, fetch_refspec, merge_refspec) = match body {
+        Github::Ping { zen, hook_id } => {
+            info!("received ping from hook {}: {}", hook_id, zen);
+            return Ok(StatusCode::NO_CONTENT);
+        }
         Github::Push {
+            after,
             reference,
             repository,
-        } => {}
+        } => (repository, reference, Some(after)),
         Github::Release {
             action,
             repository,
@@ -67,32 +71,43 @@ pub async fn hook(
         } => {
             // Only do stuff when released
             if action == ReleaseAction::Released {
-                // Build the repository path
-                let folder_name = repository.name.replace("/", "__");
-                let path = config.server.repositories.join(folder_name);
-
-                // Initialize the repository
-                let repo = Repository::init(&path).unwrap();
-
-                // Get the repository's remote to pull
-                repo.remote_set_url("origin", &repository.clone_url)
-                    .unwrap();
-                let mut remote = repo.find_remote("origin").unwrap();
-
-                // Download the repository
-                // TODO: support private repositories
-                info!(
-                    "pulling {} version {}...",
-                    repository.name, release.tag_name
-                );
-                repo::pull(
-                    &repo,
-                    &format!("refs/tags/{}", release.tag_name),
-                    &mut remote,
-                )
-                .map_err(|e| reject::custom(GitError(e)))?;
+                let tag_refspec = format!("refs/tags/{}", release.tag_name);
+                (repository, tag_refspec, None)
+            } else {
+                return Ok(StatusCode::NO_CONTENT);
             }
         }
+    };
+
+    // Build the repository path
+    let folder_name = repository.name.replace("/", "__");
+    let path = config.server.repositories.join(folder_name);
+
+    // Initialize the repository
+    let repo = Repository::init(&path).unwrap();
+
+    // Get the repository's remote to pull
+    repo.remote_set_url("origin", &repository.clone_url)
+        .unwrap();
+    let mut remote = repo.find_remote("origin").unwrap();
+
+    // Download the repository
+    // TODO: support private repositories
+    info!("pulling {} for {}", fetch_refspec, repository.name);
+    let fetch_commit = repo::fetch(&repo, &[&fetch_refspec], &mut remote)
+        .map_err(|e| reject::custom(GitError(e)))?;
+
+    // Merge the fetched data
+    info!(
+        "merging into {}",
+        fetch_commit.refname().unwrap_or(&fetch_refspec)
+    );
+    repo::merge(&repo, &fetch_refspec, fetch_commit).map_err(|e| reject::custom(GitError(e)))?;
+
+    // Checkout the last pushed commit (if it is a push)
+    if let Some(commit) = merge_refspec {
+        info!("checking out commit {}", commit);
+        repo::checkout(&repo, &commit).map_err(|e| reject::custom(GitError(e)))?;
     }
 
     Ok(StatusCode::NO_CONTENT)

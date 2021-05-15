@@ -9,6 +9,7 @@ pub enum Github {
         hook_id: i64,
     },
     Push {
+        after: String,
         #[serde(rename = "ref")]
         reference: String,
         repository: Repository,

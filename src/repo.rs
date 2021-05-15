@@ -1,20 +1,29 @@
 use git2::{
-    build::CheckoutBuilder, AnnotatedCommit, AutotagOption, FetchOptions, Reference, Remote,
-    RemoteCallbacks, Repository,
+    build::CheckoutBuilder, AnnotatedCommit, AutotagOption, FetchOptions, Oid, Reference, Remote,
+    RemoteCallbacks, Repository, ResetType,
 };
 use tracing::{debug, error, info};
 
 type Result<T> = std::result::Result<T, git2::Error>;
 
-/// Pull from the remote up to the refspec
-pub fn pull(repo: &Repository, refspec: &str, remote: &mut Remote) -> Result<()> {
-    let fetch_commit = fetch(repo, &[refspec], remote)?;
-    merge(repo, refspec, fetch_commit)?;
+/// Checkout the specified commit by SHA1 hash
+pub fn checkout(repo: &Repository, hash: &str) -> Result<()> {
+    // Find the commit
+    let oid = Oid::from_str(hash)?;
+    let commit = repo.find_commit(oid)?;
+
+    // Reset the current working tree to the desired commit
+    repo.reset(
+        commit.as_object(),
+        ResetType::Hard,
+        Some(CheckoutBuilder::default().force()),
+    )?;
+
     Ok(())
 }
 
-/// Fetch up to the specified refspec
-fn fetch<'r>(
+/// Fetch all the data in the given refspec
+pub fn fetch<'r>(
     repo: &'r Repository,
     refs: &[&str],
     remote: &'r mut Remote,
@@ -77,7 +86,7 @@ fn fetch<'r>(
 
 /// Merge the pulled branch and the current history
 /// Supports normal merge and fast-forwarding, but will not try to resolve conflicts.
-fn merge(repo: &Repository, refname: &str, fetch_commit: AnnotatedCommit) -> Result<()> {
+pub fn merge(repo: &Repository, refname: &str, fetch_commit: AnnotatedCommit) -> Result<()> {
     // Run a merge analysis
     let analysis = repo.merge_analysis(&[&fetch_commit])?;
 
