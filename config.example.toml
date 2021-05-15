@@ -15,6 +15,9 @@ repositories = "./repositories"
 # A secret key to secure the webhook
 secret = "some-secure-string"
 
+# The number of deployment processors to run
+workers = 2
+
 
 # Events that should be listened to
 # Below is an example of a push deploy

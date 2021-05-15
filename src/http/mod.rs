@@ -1,4 +1,5 @@
-use crate::config::Config;
+use crate::{config::Config, processor::Message};
+use async_channel::Sender;
 use std::{convert::Infallible, sync::Arc};
 use tracing::info;
 use warp::{http::StatusCode, Filter, Rejection, Reply};
@@ -18,8 +19,17 @@ fn with_config(
     warp::any().map(move || config.clone())
 }
 
+fn with_sender(
+    sender: Sender<Message>,
+) -> impl Filter<Extract = (Sender<Message>,), Error = Infallible> + Clone {
+    warp::any().map(move || sender.clone())
+}
+
 /// Build the routes for the API
-pub fn routes(config: Config) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn routes(
+    config: Config,
+    sender: Sender<Message>,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     // Health check route
     let health = warp::path("health")
         .and(warp::get())
@@ -36,6 +46,7 @@ pub fn routes(config: Config) -> impl Filter<Extract = impl Reply, Error = Rejec
         .and(warp::body::bytes())
         .and(warp::header::<String>("X-Hub-Signature-256"))
         .and(with_config(config))
+        .and(with_sender(sender))
         .and_then(handlers::hook)
         .with(warp::trace::named("hook"));
 

@@ -11,6 +11,7 @@ use warp::{
 mod config;
 mod github;
 mod http;
+mod processor;
 mod repo;
 
 #[tokio::main]
@@ -38,8 +39,11 @@ async fn main() -> Result<()> {
         .with_span_events(FmtSpan::CLOSE)
         .init();
 
+    // Create the processing runner
+    let sender = processor::create(configuration.server.workers);
+
     // Setup the routes and launch the server
-    let routes = http::routes(configuration)
+    let routes = http::routes(configuration, sender)
         .recover(http::recover)
         .with(trace_request());
     warp::serve(routes).run(address).await;

@@ -24,6 +24,7 @@ pub struct Server {
     pub log: String,
     pub repositories: PathBuf,
     pub secret: String,
+    pub workers: u32,
 }
 
 #[derive(Debug, Deserialize)]

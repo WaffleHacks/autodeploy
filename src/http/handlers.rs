@@ -5,8 +5,10 @@ use super::{
 };
 use crate::{
     github::{Github, ReleaseAction},
+    processor::Message,
     repo,
 };
+use async_channel::Sender;
 use bytes::Bytes;
 use git2::Repository;
 use std::path::Path;
@@ -18,6 +20,7 @@ pub async fn hook(
     raw_body: Bytes,
     raw_signature: String,
     config: SharedConfig,
+    sender: Sender<Message>,
 ) -> Result<impl Reply, Rejection> {
     // Ensure the signature is valid
     access::valid_signature(&raw_body, raw_signature, config.server.secret.as_bytes())?;
@@ -75,6 +78,9 @@ pub async fn hook(
     .await
     .unwrap()
     .map_err(|e| reject::custom(GitError(e)))?;
+
+    // Queue the repository for processing
+    Message::send(sender, path, repository.name).await;
 
     Ok(StatusCode::NO_CONTENT)
 }
