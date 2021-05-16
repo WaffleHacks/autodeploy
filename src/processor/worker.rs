@@ -42,6 +42,7 @@ async fn deploy(path: &Path, repository: &str) -> Result<bool> {
 
                 // Build the command
                 let mut cmd = Command::new(&command);
+                cmd.current_dir(path);
                 for arg in args {
                     cmd.arg(arg);
                 }
