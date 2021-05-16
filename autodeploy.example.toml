@@ -6,8 +6,12 @@
 [[deploy]]
 action = "command"
 
-# The command to run
-command = "echo testing command"
+# The bare command or the path to it to run
+# If the bare command is used, it must be on the system PATH
+command = "echo"
+
+# The arguments to pass to the command
+args = ["hello", "world"]
 
 # Copy a file from within the repository to somewhere else in the system
 [[deploy]]
