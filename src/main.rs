@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use std::env;
+use structopt::StructOpt;
 use tokio::fs;
 use tracing::Span;
 use tracing_subscriber::fmt::format::FmtSpan;
@@ -8,23 +8,28 @@ use warp::{
     Filter,
 };
 
+mod args;
 mod config;
 mod github;
 mod http;
 mod processor;
 mod repo;
 
+use args::Args;
+
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Determine what config file to load
-    let file = env::var("AUTODEPLOY_CONFIG").unwrap_or_else(|_| "./config.toml".to_string());
+    // Parse the cli
+    let cli = Args::from_args();
 
     // Get the configuration
-    let configuration = config::parse(file)
+    let configuration = config::parse(cli.config)
         .await
         .context("Failed to load configuration")?;
-    let address = configuration.server.address;
-    let log_filter = env::var("RUST_LOG").unwrap_or_else(|_| configuration.server.log.clone());
+    let address = cli.address.unwrap_or(configuration.server.address);
+    let log_filter = cli
+        .log_level
+        .unwrap_or_else(|| configuration.server.log.clone());
 
     // Ensure the directory for the repositories exists
     if !configuration.server.repositories.exists() {
