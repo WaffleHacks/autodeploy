@@ -38,7 +38,7 @@ async fn deploy(path: &Path, repository: &str) -> Result<bool> {
     for action in &actions {
         match action {
             Action::Command { command, args } => {
-                info!(command = %&command, "running command");
+                info!(command = %&command, args = ?&args, "running command");
 
                 // Build the command
                 let mut cmd = Command::new(&command);
