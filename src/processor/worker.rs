@@ -20,8 +20,8 @@ pub async fn worker(id: u32, receiver: Receiver<Message>) {
         let result = deploy(&message.path, &message.repository).await;
         match result {
             Ok(true) => info!("deploy successful"),
-            Ok(false) => info!("deploy failed"),
-            Err(e) => info!(error = %e, "deploy failed"),
+            Ok(false) => error!("deploy failed"),
+            Err(e) => error!(error = %e, "deploy failed"),
         }
     }
 }
