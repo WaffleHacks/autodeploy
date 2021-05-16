@@ -4,7 +4,7 @@ use super::{
 };
 use crate::github::Github;
 use ring::hmac;
-use tracing::{debug, warn};
+use tracing::warn;
 use warp::{reject, Rejection};
 
 type Result = std::result::Result<(), Rejection>;
@@ -21,7 +21,7 @@ pub(crate) fn valid_signature(raw_body: &[u8], raw_signature: String, secret: &[
 
     // Display the expected signature in debug builds
     #[cfg(debug_assertions)]
-    debug!(
+    tracing::debug!(
         "signature validation: expected: {}, got: {}",
         hex::encode(hmac::sign(&key, raw_body).as_ref()),
         signature_hex
