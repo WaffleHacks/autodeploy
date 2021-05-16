@@ -1,6 +1,6 @@
 [package]
 name = "autodeploy"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Alex Krantz <alex@krantz.dev>"]
 edition = "2018"
 
