@@ -1,5 +1,7 @@
 use async_channel::Sender;
+use tracing::info;
 
+mod config;
 mod message;
 mod worker;
 
@@ -10,9 +12,11 @@ pub fn create(num_workers: u32) -> Sender<Message> {
     // Create the channels
     let (tx, rx) = async_channel::unbounded();
 
+    info!(count = num_workers, "spawning deployment workers");
+
     // Spawn the workers
-    for _ in 0..num_workers {
-        tokio::spawn(worker::worker(rx.clone()));
+    for id in 0..num_workers {
+        tokio::spawn(worker::worker(id, rx.clone()));
     }
 
     tx

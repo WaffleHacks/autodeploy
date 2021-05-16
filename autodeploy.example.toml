@@ -1,0 +1,20 @@
+## The array `[[deploy]]` defines the sequence of actions run on deploy.
+## There are currently two possible actions: command, copy.
+## Actions are run in the order they are defined.
+
+# Run an arbitrary command on the system
+[[deploy]]
+action = "command"
+
+# The command to run
+command = "echo testing command"
+
+# Copy a file from within the repository to somewhere else in the system
+[[deploy]]
+action = "copy"
+
+# The path to the source file relative to the root of the repository
+src = "app.file"
+
+# The path to the destination location as an absolute path
+dest = "/etc/app/file"

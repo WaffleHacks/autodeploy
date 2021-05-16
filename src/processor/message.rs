@@ -6,8 +6,8 @@ use std::path::PathBuf;
 /// information to deploy the repository.
 #[derive(Debug)]
 pub struct Message {
-    path: PathBuf,
-    repository: String,
+    pub path: PathBuf,
+    pub repository: String,
 }
 
 impl Message {
