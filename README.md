@@ -1,3 +1,5 @@
+This project is no longer receiving updates and has been superseded by [WaffleMaker](https://github.com/WaffleHacks/wafflemaker).
+
 # AutoDeploy
 
 Automatically deploy GitHub repos using webhooks.
